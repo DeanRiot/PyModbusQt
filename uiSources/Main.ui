@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>517</width>
+    <height>545</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>PyModbus</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Пакет (без crc):</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="frameInput"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="sendButton">
+        <property name="text">
+         <string>Отправить</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Ответ декодировать как:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="decodeAsComboBox">
+        <property name="editable">
+         <bool>false</bool>
+        </property>
+        <property name="currentText">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QListWidget" name="listWidget"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>517</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>Опции</string>
+    </property>
+    <widget class="QMenu" name="menu_2">
+     <property name="title">
+      <string>Система команд</string>
+     </property>
+     <addaction name="choise_system_node"/>
+     <addaction name="add_system_node"/>
+     <addaction name="change_system_node"/>
+    </widget>
+    <widget class="QMenu" name="menu_3">
+     <property name="title">
+      <string>Связь</string>
+     </property>
+     <addaction name="action_TCP"/>
+     <addaction name="action_RTU"/>
+    </widget>
+    <addaction name="menu_2"/>
+    <addaction name="add_single_node"/>
+    <addaction name="separator"/>
+    <addaction name="menu_3"/>
+    <addaction name="separator"/>
+    <addaction name="action_Unix_Time"/>
+   </widget>
+   <addaction name="menu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="choise_system_node">
+   <property name="text">
+    <string>Выбрать</string>
+   </property>
+  </action>
+  <action name="add_system_node">
+   <property name="text">
+    <string>Добавить</string>
+   </property>
+  </action>
+  <action name="change_system_node">
+   <property name="text">
+    <string>Изменить</string>
+   </property>
+  </action>
+  <action name="add_single_node">
+   <property name="text">
+    <string>Добавить команду</string>
+   </property>
+  </action>
+  <action name="action_TCP">
+   <property name="text">
+    <string>Настроить по TCP</string>
+   </property>
+  </action>
+  <action name="action_RTU">
+   <property name="text">
+    <string>Настроить по RTU</string>
+   </property>
+  </action>
+  <action name="action_Unix_Time">
+   <property name="text">
+    <string>Вычислить Unix-Time</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
