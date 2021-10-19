@@ -50,4 +50,4 @@ def calcString(st, crc):
     """Given a bunary string and starting CRC, Calc a final CRC-16 """
     for ch in st:
         crc = (crc >> 8) ^ table[(crc ^ ord(ch)) & 0xFF]
-    return crc & 0xFFFF
+    return crc

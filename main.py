@@ -1,17 +1,20 @@
 """
 TODO:
  - make rtu working on
- - make delete commands into CommandLines
  - implement some views form received data
+ - crc smells like shit
 """
 
 import sys  # sys нужен для передачи argv в QApplication
+import asyncio
 
 import modules.modb as modbus
 import modules.TCPClient as TCPClient
 import modules.jsonWorker as jsonWorker
 import modules.dateTimeProcessing as dateTimeCalc
-from PyQt6 import QtWidgets,QtGui
+import modules.receiveProcessing as receiveProcessing
+
+from PyQt6 import QtWidgets
 
 import design.Main as mainForm
 import design.TCPSettings as TCPSettingsForm
@@ -25,11 +28,15 @@ import design.EditComandForm as EditCommandForm
 
 data = jsonWorker.readFile()
 
+MainForm = None
+TcpConnection = None
+
 class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
+    global MainForm
     def __init__(self):
         super(MainView, self).__init__()
         self.setupUi(self)
-        self.decodeAsComboBox.insertItems(0, ['hex', 'int', 'dateTime'])
+        self.decodeAsComboBox.insertItems(0, ['hex', 'Ascii', 'dateTime'])
         self.action_TCP.triggered.connect(openTCPConnections)
         self.action_RTU.triggered.connect(openRTUConnections)
         self.sendButton.clicked.connect(self.sendFrame)
@@ -38,17 +45,14 @@ class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
         self.action_Unix_Time.triggered.connect(self.calcTimestamp)
         self.add_system_node.triggered.connect(openAddCommandsSystem)
         self.change_system_node.triggered.connect(openChangeCommandsSystem)
+        MainForm = self
 
     def sendFrame(self):
-        try:
-            if TcpConnection is not None:
-                data = self.frameInput.text()
-                frame = modbus.createFrame(modbus.parseHexFrame(data))
-                data_bytes = bytes(frame)
-                TCPClient.Send(data_bytes, TcpConnection)
-        except:
-            print("Send Error")
-        read()
+        if TcpConnection is not None:
+            frameData = self.frameInput.text()
+            frame = modbus.createFrame(modbus.parseHexFrame(frameData))
+            data_bytes = bytes(frame)
+            asyncio.run(TCPClient.SendFrame(data_bytes, TcpConnection, self))
 
     def calcTimestamp(self):
         self.frameInput.setText(dateTimeCalc.calcHex())
@@ -131,6 +135,7 @@ class AddCommandView(QtWidgets.QWidget, AddCommandForm.Ui_AddButton):
         super(AddCommandView, self).__init__()
         self.setupUi(self)
         systemsNames = []
+        self.comboBox.clear()
         for systems in data:
             systemsNames.append(systems["systemName"])
         self.comboBox.insertItems(0, systemsNames)
@@ -167,6 +172,8 @@ class ChoiseComandView(QtWidgets.QWidget, ChoiseCommandForm.Ui_ChoiseComandForm)
         self.setupUi(self)
         systemsNames = []
         comands = []
+        self.systemsComboBox.clear()
+        self.comandsComboBox.clear()
         for systems in data:
             systemsNames.append(systems["systemName"])
             for comandName in systems["commands"]:
@@ -253,17 +260,12 @@ class UpdateCommandsSystemView(QtWidgets.QWidget, EditCommandForm.Ui_EditComandF
             if system["systemName"] == self.systemsComboBox.currentText():
                 for cmd in system['commands']:
                     if cmd["commandName"] == self.comandsComboBox.currentText():
-                        cmd.update({"command":self.comandValue.text()})
+                        cmd.update({"command": self.comandValue.text()})
         jsonWorker.writeFile(data)
 
 
-def read():
-    dataBytes = TCPClient.Receive(TcpConnection, 1024)
-    text = ''
-    for byte in dataBytes:
-        text += hex(byte) + ' '
-    MainFormWindow.listWidget.addItem(text)
-
+def getMainForm():
+    return MainForm()
 
 def main():
     global MainFormWindow
