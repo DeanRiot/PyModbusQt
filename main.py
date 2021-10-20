@@ -1,10 +1,3 @@
-"""
-TODO:
- - make rtu working on
- - implement some views form received data
- - crc smells like shit
-"""
-
 import sys  # sys нужен для передачи argv в QApplication
 import asyncio
 
