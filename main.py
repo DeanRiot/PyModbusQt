@@ -54,12 +54,20 @@ class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
         if SerialWorker.ser is not None and SerialWorker.isConnected():
             frameData = self.frameInput.text()
             frame = modbus.createFrame(modbus.parseHexFrame(frameData))
+            newFr = ""
+            for byte in frame:
+                newFr += hex(byte) + " "
+            self.listWidget.addItem(">> " + newFr)
             data_bytes = bytes(frame)
             asyncio.run(SerialWorker.writeSerial(data_bytes, self))
 
         if TcpConnection is not None:
             frameData = self.frameInput.text()
             frame = modbus.createFrame(modbus.parseHexFrame(frameData))
+            newFr = ""
+            for byte in frame:
+                newFr += hex(byte) + " "
+            self.listWidget.addItem(">> " + newFr)
             data_bytes = bytes(frame)
             asyncio.run(TCPClient.SendFrame(data_bytes, TcpConnection, self))
 
@@ -155,17 +163,22 @@ class RTUConnectionsView(QtWidgets.QWidget, RTUSettingsForm.Ui_RTUSettings):
         self.ConnectButton.clicked.connect(self.onRtuConnectButton)
 
     def onRtuConnectButton(self):
-        SerialWorker.connect(_port = self.comboBox_4.currentText(),
-                             speed = self.lineEdit.text(),
-                             pairity = self.comboBox.currentText(),
-                             data_bits = self.comboBox_2.currentText(),
-                             stop_bits = self.comboBox_3.currentText())
+        try:
+            SerialWorker.connect(_port=self.comboBox_4.currentText(),
+                                 speed=self.lineEdit.text(),
+                                 pairity=self.comboBox.currentText(),
+                                 data_bits=self.comboBox_2.currentText(),
+                                 stop_bits=self.comboBox_3.currentText())
+            showOKStatus()
+        except:
+            showErrStatus()
 
 
 class ConnectStatusDialog(QtWidgets.QWidget, ConnectionOKDialog.Ui_ConnectionDialog):
     def __init__(self):
         super(ConnectStatusDialog, self).__init__()
         self.setupUi(self)
+        self.OKButton.clicked.connect(lambda :self.close())
 
 
 class ConnectErrStatusDialog(QtWidgets.QWidget, ConnectionOKDialog.Ui_ConnectionDialog):
@@ -174,7 +187,7 @@ class ConnectErrStatusDialog(QtWidgets.QWidget, ConnectionOKDialog.Ui_Connection
         self.setupUi(self)
         self.label.setText("Ошибка подключения")
         self.setWindowIconText("Ошибка")
-
+        self.OKButton.clicked.connect(lambda: self.close())
 
 class AddCommandView(QtWidgets.QWidget, AddCommandForm.Ui_AddButton):
     def __init__(self):
@@ -211,7 +224,7 @@ class AddCommandOkDialogView(QtWidgets.QWidget, AddCommandOkDialog.Ui_CommandAdd
     def __init__(self):
         super(AddCommandOkDialogView, self).__init__()
         self.setupUi(self)
-
+        self.pushButton.clicked.connect(lambda: self.close())
 
 class ChoiseComandView(QtWidgets.QWidget, ChoiseCommandForm.Ui_ChoiseComandForm):
     def __init__(self):
@@ -307,10 +320,6 @@ class UpdateCommandsSystemView(QtWidgets.QWidget, EditCommandForm.Ui_EditComandF
                     if cmd["commandName"] == self.comandsComboBox.currentText():
                         cmd.update({"command": self.comandValue.text()})
         jsonWorker.writeFile(data)
-
-
-def getMainForm():
-    return MainForm()
 
 
 def main():
