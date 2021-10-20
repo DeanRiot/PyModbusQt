@@ -7,9 +7,11 @@ def createFrame(modbFrame):
     for sym in modbFrame:
         data.append(int(sym.encode('ascii')))
         pdu = pdu + chr(int(sym))
-    crcSumm = hex(crc.calcString(pdu, 0xFFFF))
-    data.append(int(crcSumm[4:6], base=16))
-    data.append(int(crcSumm[2:4], base=16))
+    crcSumm = crc.calcString(pdu)
+    crcs1 = int(hex(ord(crcSumm[0])), base=16)
+    crcs2 = int(hex(ord(crcSumm[1])), base=16)
+    data.append(crcs1)
+    data.append(crcs2)
     return data
 
 

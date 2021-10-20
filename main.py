@@ -13,6 +13,7 @@ import modules.TCPClient as TCPClient
 import modules.jsonWorker as jsonWorker
 import modules.dateTimeProcessing as dateTimeCalc
 import modules.receiveProcessing as receiveProcessing
+import modules.SerialWorker as SerialWorker
 
 from PyQt6 import QtWidgets
 
@@ -31,8 +32,10 @@ data = jsonWorker.readFile()
 MainForm = None
 TcpConnection = None
 
+
 class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
     global MainForm
+
     def __init__(self):
         super(MainView, self).__init__()
         self.setupUi(self)
@@ -48,6 +51,12 @@ class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
         MainForm = self
 
     def sendFrame(self):
+        if SerialWorker.ser is not None and SerialWorker.isConnected():
+            frameData = self.frameInput.text()
+            frame = modbus.createFrame(modbus.parseHexFrame(frameData))
+            data_bytes = bytes(frame)
+            asyncio.run(SerialWorker.writeSerial(data_bytes, self))
+
         if TcpConnection is not None:
             frameData = self.frameInput.text()
             frame = modbus.createFrame(modbus.parseHexFrame(frameData))
@@ -75,6 +84,7 @@ def openChoiseComand():
     ChoiseComand = ChoiseComandView()
     ChoiseComand.show()
 
+
 def openAddCommand():
     global AddCommand
     AddCommand = AddCommandView()
@@ -98,6 +108,10 @@ def showOKStatus():
     ConnOKStatusForm = ConnectStatusDialog()
     ConnOKStatusForm.show()
 
+def showErrStatus():
+    global ConnErrStatusForm
+    ConnErrStatusForm = ConnectErrStatusDialog()
+    ConnErrStatusForm.show()
 
 class TCPConnectionsView(QtWidgets.QWidget, TCPSettingsForm.Ui_TCPSettings):
     def __init__(self):
@@ -107,7 +121,7 @@ class TCPConnectionsView(QtWidgets.QWidget, TCPSettingsForm.Ui_TCPSettings):
 
     def onConnectionButtonClick(self):
         global TcpConnection
-        if not(self.ip_edit.text() == '') and not(self.port_edit.text() == ''):
+        if not (self.ip_edit.text() == '') and not (self.port_edit.text() == ''):
             try:
                 ip = self.ip_edit.text()
                 port = self.port_edit.text()
@@ -123,11 +137,43 @@ class RTUConnectionsView(QtWidgets.QWidget, RTUSettingsForm.Ui_RTUSettings):
         super(RTUConnectionsView, self).__init__()
         self.setupUi(self)
 
+        pairity = ["NONE", "ODD", "EVEN", "MARK", "SPACE"]
+        data_bits = ["5", "6", "7", "8"]
+        stop_bits = ["1", "2"]
+
+        self.comboBox_4.clear()  # ports
+        self.lineEdit.clear()  # speed
+        self.comboBox.clear()  # pair
+        self.comboBox_2.clear()  # data
+        self.comboBox_3.clear()  # stop
+
+        self.comboBox_4.insertItems(0, SerialWorker.serial_ports())
+        self.lineEdit.setText('9600')
+        self.comboBox.insertItems(0, pairity)
+        self.comboBox_2.insertItems(0, data_bits)
+        self.comboBox_3.insertItems(0, stop_bits)
+        self.ConnectButton.clicked.connect(self.onRtuConnectButton)
+
+    def onRtuConnectButton(self):
+        SerialWorker.connect(_port = self.comboBox_4.currentText(),
+                             speed = self.lineEdit.text(),
+                             pairity = self.comboBox.currentText(),
+                             data_bits = self.comboBox_2.currentText(),
+                             stop_bits = self.comboBox_3.currentText())
+
 
 class ConnectStatusDialog(QtWidgets.QWidget, ConnectionOKDialog.Ui_ConnectionDialog):
     def __init__(self):
         super(ConnectStatusDialog, self).__init__()
         self.setupUi(self)
+
+
+class ConnectErrStatusDialog(QtWidgets.QWidget, ConnectionOKDialog.Ui_ConnectionDialog):
+    def __init__(self):
+        super(ConnectErrStatusDialog, self).__init__()
+        self.setupUi(self)
+        self.label.setText("Ошибка подключения")
+        self.setWindowIconText("Ошибка")
 
 
 class AddCommandView(QtWidgets.QWidget, AddCommandForm.Ui_AddButton):
@@ -145,14 +191,15 @@ class AddCommandView(QtWidgets.QWidget, AddCommandForm.Ui_AddButton):
         cmdName = self.lineEdit_2.text()
         cmdFrame = self.lineEdit.text()
         systemName = self.comboBox.currentText()
-        if not(cmdName == '') and not(cmdFrame == ''):
+        if not (cmdName == '') and not (cmdFrame == ''):
             for system in data:
                 if system["systemName"] == systemName:
-                    newComand = {"commandName":cmdName, "command":cmdFrame}
+                    newComand = {"commandName": cmdName, "command": cmdFrame}
                     commands = system["commands"]
                     commands.append(newComand)
                     jsonWorker.writeFile(data)
                     showAddOk()
+
 
 def showAddOk():
     global AddCommandOkDialogForm
@@ -199,8 +246,6 @@ class ChoiseComandView(QtWidgets.QWidget, ChoiseCommandForm.Ui_ChoiseComandForm)
                     self.comandsComboBox.addItem(command["commandName"])
 
 
-
-
 class CreateCommandsSystemView(QtWidgets.QWidget, CreateCommandsSystemForm.Ui_CreateComandSystemForm):
     def __init__(self):
         super(CreateCommandsSystemView, self).__init__()
@@ -213,10 +258,10 @@ class CreateCommandsSystemView(QtWidgets.QWidget, CreateCommandsSystemForm.Ui_Cr
         frameValue1 = self.ComandValueEdit1.text()
         frameName2 = self.ComandNameEdit2.text()
         frameValue2 = self.ComandValueEdit2.text()
-        if sysName != '' and frameName1!='' and frameValue1 != '' and frameName2 !='' and frameValue2 != '':
-            system = {"systemName":sysName,
-                      "commands":[
-                          {"commandName":frameName1, "command":frameValue1},
+        if sysName != '' and frameName1 != '' and frameValue1 != '' and frameName2 != '' and frameValue2 != '':
+            system = {"systemName": sysName,
+                      "commands": [
+                          {"commandName": frameName1, "command": frameValue1},
                           {"commandName": frameName2, "command": frameValue2}]}
             data.append(system)
             print(data)
@@ -266,6 +311,7 @@ class UpdateCommandsSystemView(QtWidgets.QWidget, EditCommandForm.Ui_EditComandF
 
 def getMainForm():
     return MainForm()
+
 
 def main():
     global MainFormWindow

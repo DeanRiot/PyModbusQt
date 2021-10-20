@@ -1,7 +1,4 @@
-INITIAL_MODBUS = 0xFFFF
-INITIAL_DF1 = 0x0000
-
-table = (
+crc_table = (
     0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
     0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
     0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40,
@@ -36,18 +33,13 @@ table = (
     0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040)
 
 
-def calcByte(ch, crc):
-    """Given a new Byte and previous CRC, Calc a new CRC-16"""
-    if type(ch) == type("c"):
-        by = ord(ch)
-    else:
-        by = ch
-    crc = (crc >> 8) ^ table[(crc ^ by) & 0xFF]
-    return crc & 0xFFFF
-
-
-def calcString(st, crc):
+def calcString(s):
+    crc = 0xffff
     """Given a bunary string and starting CRC, Calc a final CRC-16 """
-    for ch in st:
-        crc = (crc >> 8) ^ table[(crc ^ ord(ch)) & 0xFF]
-    return crc
+    for ch in s:
+        crc = (crc >> 8) ^ crc_table[(crc ^ ord(ch)) & 0xFF]
+    return "{}{}".format(chr(crc & 0xff), chr(crc >> 8 & 0xff))
+
+
+def validate(s, crc):
+    return calcString(s) == crc
