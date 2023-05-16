@@ -1,62 +1,59 @@
 import modules.receiveProcessing as receiveProcessing
-
+import time
 import asyncio
 
 import socket
 
-RD_TMOUT = 0.1
-RD_LEN = 512
-
-
-def Connect(adr, port):
+def Connect(adr, port, default_timeout:int, async_timeout:int):
+    global RD_TMOUT 
+    RD_TMOUT = async_timeout
     connection = socket.socket()
+    connection.settimeout(default_timeout)
     connection.connect((adr, port))
     return connection
 
 
-async def SendFrame(frameString, connection, form):
+async def SendFrame(frameString, connection, out_rep):
     if connection is not None:
         try:
             await asyncio.wait_for(Send(frameString, connection), RD_TMOUT)
-        except asyncio.TimeoutError:
-            readAs([1, 0, 0, 0], form)
-        except:
-            readAs([1, 0, 0, 1], form)
-        await Receive(connection, form)
+        except Exception as e:
+            return readAs([0, 0, 0, 0], out_rep)
+        time.sleep(RD_TMOUT/1000)
+        data = await Receive(connection, out_rep)
+        return data
 
 
-async def Receive(connection, form):
+async def Receive(connection, out_rep):
     if connection is not None:
         data = []
         try:
-            data = await asyncio.wait_for(Recv(connection, RD_LEN), timeout=RD_TMOUT)
-            readAs(data, form)
-        except asyncio.TimeoutError:
-            readAs([00, 00, 00, 00], form)
-        except:
-            readAs([00, 00, 00, 00], form)
+            data = await asyncio.wait_for(Recv(connection), timeout=RD_TMOUT)
+            return readAs(data, out_rep)
+        except Exception as e:
+            return readAs([00, 00, 00, 00], out_rep)
 
 
 async def Send(frameString, connection):
     connection.send(frameString)
 
 
-async def Recv(conn, length):
-    data = conn.recv(length)
-    return data
+async def Recv(conn):
+    conn.setblocking(False)
+    data = conn.makefile().read(-1) 
+    conn.setblocking(True)
+    return str.encode(data)
 
 
-def readAs(dataBytes, form):
-    ctext = form.decodeAsComboBox.currentText()
-    if ctext == 'dateTime':
-         text = receiveProcessing.getDateTime(dataBytes)
-    elif ctext == 'Ascii':
-         text = receiveProcessing.getAscii(dataBytes)
-    elif ctext == 'hex':
-         text = receiveProcessing.getHex(dataBytes)
+def readAs(dataBytes, out_rep):
+    if out_rep == 'dateTime':
+        return receiveProcessing.getDateTime(dataBytes)
+    elif out_rep == 'Ascii':
+         returnreceiveProcessing.getAscii(dataBytes)
+    elif out_rep == 'hex':
+        return receiveProcessing.getHex(dataBytes)
     else:
-        text = receiveProcessing.getHex(dataBytes)
-    form.listWidget.addItem(text)
+        return receiveProcessing.getHex(dataBytes)
 
 
 def Close(connection):

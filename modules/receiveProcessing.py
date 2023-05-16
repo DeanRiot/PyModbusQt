@@ -1,6 +1,5 @@
 import datetime
 
-
 def getHex(dataBytes):
     text = ''
     for byte in dataBytes:

@@ -1,6 +1,6 @@
 import sys  # sys нужен для передачи argv в QApplication
 import asyncio
-
+import datetime
 import modules.modb as modbus
 import modules.TCPClient as TCPClient
 import modules.jsonWorker as jsonWorker
@@ -10,15 +10,16 @@ import modules.SerialWorker as SerialWorker
 
 from PyQt6 import QtWidgets
 
-import design.Main as mainForm
-import design.TCPSettings as TCPSettingsForm
-import design.RTUSettings as RTUSettingsForm
-import design.ConnectionOkDialog as ConnectionOKDialog
-import design.AddCommandForm as AddCommandForm
-import design.AddCommandOkDialog as AddCommandOkDialog
-import design.ChoiseComandForm as ChoiseCommandForm
-import design.CreateComandsSystem as CreateCommandsSystemForm
-import design.EditComandForm as EditCommandForm
+import view.Main as mainForm
+import view.TCPSettings as TCPSettingsForm
+import view.RTUSettings as RTUSettingsForm
+import view.ConnectionOkDialog as ConnectionOKDialog
+import view.AddCommandForm as AddCommandForm
+import view.AddCommandOkDialog as AddCommandOkDialog
+import view.ChoiseComandForm as ChoiseCommandForm
+import view.CreateComandsSystem as CreateCommandsSystemForm
+import view.EditComandForm as EditCommandForm
+import view.ScriptingForm as ScriptingForm
 
 data = jsonWorker.readFile()
 
@@ -41,6 +42,7 @@ class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
         self.action_Unix_Time.triggered.connect(self.calcTimestamp)
         self.add_system_node.triggered.connect(openAddCommandsSystem)
         self.change_system_node.triggered.connect(openChangeCommandsSystem)
+        self.action_scripting.triggered.connect(openScriptingForm)
         MainForm = self
 
     def sendFrame(self):
@@ -48,8 +50,7 @@ class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
             frameData = self.frameInput.text()
             frame = modbus.createFrame(modbus.parseHexFrame(frameData))
             newFr = ""
-            for byte in frame:
-                newFr += hex(byte) + " "
+            for byte in frame: newFr += hex(byte) + " "
             self.listWidget.addItem(">> " + newFr)
             data_bytes = bytes(frame)
             asyncio.run(SerialWorker.writeSerial(data_bytes, self))
@@ -58,21 +59,24 @@ class MainView(QtWidgets.QMainWindow, mainForm.Ui_MainWindow):
             frameData = self.frameInput.text()
             frame = modbus.createFrame(modbus.parseHexFrame(frameData))
             newFr = ""
-            for byte in frame:
-                newFr += hex(byte) + " "
-            self.listWidget.addItem(">> " + newFr)
+            for byte in frame: newFr += hex(byte) + " "
+            self.listWidget.addItem(str(datetime.datetime.now())+">> " + newFr)
             data_bytes = bytes(frame)
-            asyncio.run(TCPClient.SendFrame(data_bytes, TcpConnection, self))
+            answer = asyncio.run(TCPClient.SendFrame(data_bytes, TcpConnection, self.decodeAsComboBox.currentText()))
+            self.listWidget.addItem(str(datetime.datetime.now()) + answer)
 
     def calcTimestamp(self):
         self.frameInput.setText(dateTimeCalc.calcHex())
 
+def openScriptingForm():
+    global scriptingForm
+    scriptingForm = ScriptingFormView()
+    scriptingForm.show()
 
 def openChangeCommandsSystem():
     global updateSystemForm
     updateSystemForm = UpdateCommandsSystemView()
     updateSystemForm.show()
-
 
 def openAddCommandsSystem():
     global addCommandSystemsForm
@@ -97,12 +101,10 @@ def openTCPConnections():
     TCPConnView = TCPConnectionsView()
     TCPConnView.show()
 
-
 def openRTUConnections():
     global RTUConnView
     RTUConnView = RTUConnectionsView()
     RTUConnView.show()
-
 
 def showOKStatus():
     global ConnOKStatusForm
@@ -113,6 +115,59 @@ def showErrStatus():
     global ConnErrStatusForm
     ConnErrStatusForm = ConnectErrStatusDialog()
     ConnErrStatusForm.show()
+
+class ScriptingFormView(QtWidgets.QWidget, ScriptingForm.Ui_ScriptingForm):
+    def __init__(self):
+        super(ScriptingFormView, self).__init__()
+        self.setupUi(self)
+        self.AddCommandButton.clicked.connect(self.onAddCommandButtonClick)
+        self.ClearScriptButton.clicked.connect(self.onClearScriptButtonClick)
+        self.ClearOutputButton.clicked.connect(self.onClearOutputButtonClick)
+        self.RunScriptButton.clicked.connect(self.onRunScriptButtonClick)
+        self.CmdSystemShowButton.clicked.connect(self.onCmdSystemShowButtonClick)
+        self.DeleteSelectedButton.clicked.connect(self.onDeleteSelectedButtonClick)
+
+    def onAddCommandButtonClick(self):
+      self.ScriptListView.addItem(self.FrameInput.text())
+
+    def onClearScriptButtonClick(self):
+        self.ScriptListView.clear()
+
+    def onClearOutputButtonClick(self):
+        self.OutputListView.clear()
+
+    def onDeleteSelectedButtonClick(self):
+        selected = self.ScriptListView.selectedIndexes()
+        if len(selected)!=0 :
+            self.ScriptListView.takeItem(selected[0].row())   
+
+    def onRunScriptButtonClick(self):
+        if not (SerialWorker.ser is not None and SerialWorker.isConnected()) or (TcpConnection is None): return
+        for i in range(self.ScriptListView.count()):
+           self.sendFrame(self.ScriptListView.item(i).text())
+           self.OutputListView.addItem('_'*32)
+
+    def sendFrame(self, text):
+        if SerialWorker.ser is not None and SerialWorker.isConnected():
+            frame = modbus.createFrame(modbus.parseHexFrame(text))
+            newFr = ""
+            for byte in frame: newFr += hex(byte) + " "
+            self.OutputListView.addItem('>>'+newFr)
+            data_bytes = bytes(frame)
+            answer =  asyncio.run(SerialWorker.writeSerial(data_bytes))
+            self.OutputListView.addItem(str(datetime.datetime.now()) + answer)
+
+        if TcpConnection is not None:
+            frame = modbus.createFrame(modbus.parseHexFrame(text))
+            newFr = ""
+            for byte in frame: newFr += hex(byte) + " "
+            self.OutputListView.addItem(str(datetime.datetime.now())+'>>'+newFr)
+            data_bytes = bytes(frame)
+            answer = asyncio.run(TCPClient.SendFrame(data_bytes, TcpConnection, self))
+            self.OutputListView.addItem(str(datetime.datetime.now())+answer)
+
+    def onCmdSystemShowButtonClick(self):
+        openChoiseComand()
 
 class TCPConnectionsView(QtWidgets.QWidget, TCPSettingsForm.Ui_TCPSettings):
     def __init__(self):
@@ -126,11 +181,14 @@ class TCPConnectionsView(QtWidgets.QWidget, TCPSettingsForm.Ui_TCPSettings):
             try:
                 ip = self.ip_edit.text()
                 port = self.port_edit.text()
-                TcpConnection = TCPClient.Connect(ip, int(port))
-            except:
+                rd_timeout = int(self.send_timeout_edit.text())
+                defaut_timeout = int(self.receive_timeout_edit.text())
+                TcpConnection = TCPClient.Connect(ip, int(port),rd_timeout, defaut_timeout)
+                showOKStatus()
+            except Exception as e:
                 TcpConnection = None
-                self.showErrStatus()
-            showOKStatus()
+                print(str(e))
+                showErrStatus()
 
 
 class RTUConnectionsView(QtWidgets.QWidget, RTUSettingsForm.Ui_RTUSettings):
@@ -163,7 +221,8 @@ class RTUConnectionsView(QtWidgets.QWidget, RTUSettingsForm.Ui_RTUSettings):
                                  data_bits=self.comboBox_2.currentText(),
                                  stop_bits=self.comboBox_3.currentText())
             showOKStatus()
-        except:
+        except Exception as e:
+            print(str(e))
             showErrStatus()
 
 
@@ -241,7 +300,7 @@ class ChoiseComandView(QtWidgets.QWidget, ChoiseCommandForm.Ui_ChoiseComandForm)
             if system["systemName"] == self.systemsComboBox.currentText():
                 for command in system["commands"]:
                     if command["commandName"] == self.comandsComboBox.currentText():
-                        MainFormWindow.frameInput.setText(command["command"])
+                        self.output.setText(command["command"])
                         break
 
     def swapCommands(self):
@@ -270,7 +329,6 @@ class CreateCommandsSystemView(QtWidgets.QWidget, CreateCommandsSystemForm.Ui_Cr
                           {"commandName": frameName1, "command": frameValue1},
                           {"commandName": frameName2, "command": frameValue2}]}
             data.append(system)
-            print(data)
             jsonWorker.writeFile(data)
             showAddOk()
 
@@ -313,7 +371,6 @@ class UpdateCommandsSystemView(QtWidgets.QWidget, EditCommandForm.Ui_EditComandF
                     if cmd["commandName"] == self.comandsComboBox.currentText():
                         cmd.update({"command": self.comandValue.text()})
         jsonWorker.writeFile(data)
-
 
 def main():
     global MainFormWindow
