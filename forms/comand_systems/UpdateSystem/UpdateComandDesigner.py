@@ -9,7 +9,7 @@
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 
-class Ui_EditComandForm(object):
+class Ui_UpdateComandForm(object):
     def setupUi(self, EditComandForm):
         EditComandForm.setObjectName("EditComandForm")
         EditComandForm.resize(404, 268)

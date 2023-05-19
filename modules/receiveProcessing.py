@@ -2,9 +2,8 @@ import datetime
 
 def getHex(dataBytes):
     text = ''
-    for byte in dataBytes:
-        text += hex(byte) + ' '
-    return "<< " + text
+    for byte in dataBytes: text += hex(byte) + ' '
+    return str(datetime.datetime.now()) + " << " + text
 
 
 def getDateTime(dataBytes):
@@ -16,11 +15,10 @@ def getDateTime(dataBytes):
     unixDate = datetime.datetime(1970, 1, 1, 00, 00, 00)
     unixDate += datetime.timedelta(seconds=int(summ, 16), hours=3)
     result = str(unixDate)
-    return "<< " + result
+    return str(datetime.datetime.now()) + "<< " + result
 
 
 def getAscii(dataBytes):
     result = ''
-    for char in dataBytes:
-            result += chr(int(char))
-    return "<< " + result
+    for char in dataBytes: result += chr(int(char))
+    return str(datetime.datetime.now()) + "<< " + result

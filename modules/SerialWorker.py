@@ -72,50 +72,37 @@ async def write(msg):
     ser.write(msg)
 
 
-async def writeSerial(msg, form):
+async def writeSerial(msg, out_repr):
     if ser is not None:
         try:
             await asyncio.wait_for(write(msg), WR_TOUT)
-        except asyncio.TimeoutError:
-            print("Send TimeOut")
-            readAs([00, 00, 00, 00], form)
-        except:
-            print("Send err")
-            readAs([00, 00, 00, 00], form)
-
-        await readSerial(form)
+            return await readSerial(out_repr)
+        except Exception as e:
+            print(str(e))
+            readAs([00, 00, 00, 00], out_repr)
     else:
         print("serial is not opened")
 
 
 async def read():
-    data = ser.readall()
-    return data
+    return ser.readall()
 
-
-async def readSerial(form):
+async def readSerial(out_repr:str):
     if ser is not None:
         try:
             data = await asyncio.wait_for(read(), RD_TOUT)
-            readAs(data, form)
-        except asyncio.TimeoutError:
-            print("readTimeout")
-            readAs([00, 00, 00, 00], form)
-        except:
-            print("read err")
-            readAs([00, 00, 00, 00], form)
-    else:
-        print("serial is not opened")
+            return readAs(data, out_repr)
+        except Exception as e:
+            print(str(e))
+            return readAs([00, 00, 00, 00], out_repr)
+    else: print("serial is not opened")
 
-
-def readAs(dataBytes, form):
-    ctext = form.decodeAsComboBox.currentText()
-    if ctext == 'dateTime':
-         text = receiveProcessing.getDateTime(dataBytes)
-    elif ctext == 'Ascii':
-         text = receiveProcessing.getAscii(dataBytes)
-    elif ctext == 'hex':
-         text = receiveProcessing.getHex(dataBytes)
-    else:
+def readAs(dataBytes, out_repr:str)->str:
+    if out_repr == 'dateTime':
+        text = receiveProcessing.getDateTime(dataBytes)
+    elif out_repr == 'Ascii':
+        text = receiveProcessing.getAscii(dataBytes)
+    elif out_repr == 'hex':
         text = receiveProcessing.getHex(dataBytes)
-    form.listWidget.addItem(text)
+    else: text = receiveProcessing.getHex(dataBytes)
+    return text

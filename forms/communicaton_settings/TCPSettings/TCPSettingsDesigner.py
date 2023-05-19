@@ -12,6 +12,7 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 class Ui_TCPSettings(object):
     def setupUi(self, TCPSettings):
         TCPSettings.setObjectName("TCPSettings")
+        TCPSettings.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
         TCPSettings.resize(250, 269)
         self.verticalLayout = QtWidgets.QVBoxLayout(TCPSettings)
         self.verticalLayout.setObjectName("verticalLayout")

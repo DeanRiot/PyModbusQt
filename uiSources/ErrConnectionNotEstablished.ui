@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ConnectionError</class>
+ <widget class="QWidget" name="ConnectionError">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>355</width>
+    <height>170</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Ошибка</string>
+  </property>
+  <widget class="QWidget" name="verticalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>30</y>
+     <width>331</width>
+     <height>80</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Не установлено ни одного подключения (&lt;span style=&quot; font-weight:700;&quot;&gt;RTU &lt;/span&gt;или &lt;span style=&quot; font-weight:700;&quot;&gt;TCP&lt;/span&gt;). &lt;/p&gt;&lt;p&gt;Настройте подключение и повторите попытку.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QDialogButtonBox" name="buttonBox">
+   <property name="geometry">
+    <rect>
+     <x>90</x>
+     <y>130</y>
+     <width>156</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="standardButtons">
+    <set>QDialogButtonBox::Ok</set>
+   </property>
+   <property name="centerButtons">
+    <bool>true</bool>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
