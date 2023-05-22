@@ -27,9 +27,9 @@ class AddCommandForm(QtWidgets.QWidget, Ui_AddButton):
                     commands = system["commands"]
                     commands.append(newComand)
                     jsonWorker.writeFile(data)
-                    showAddOk()
+                    self.showAddOk()
     
-        def showAddOk(self):
-            global dialog
-            dialog = AddCommandOkDialog()
-            dialog.show()
+    def showAddOk(self):
+        global dialog
+        dialog = AddCommandOkDialog()
+        dialog.show()

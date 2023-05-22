@@ -29,6 +29,7 @@ class TCPClient(object):
             data = []
             try:
                 data = self.Recv()
+                print(data)
                 return self.readAs(data, out_rep)
             except Exception as e:
                 print(str(e))
@@ -39,9 +40,10 @@ class TCPClient(object):
 
     def Recv(self):
         self.connection.setblocking(False)
-        data = self.connection.makefile().read(-1) 
+        data = self.connection.makefile('rb', encoding='utf-8').read(-1)
+        print(data)
         self.connection.setblocking(True)
-        return str.encode(data)
+        return data
 
     def readAs(self,dataBytes, out_rep):
         if out_rep == 'dateTime':
